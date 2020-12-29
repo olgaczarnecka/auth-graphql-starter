@@ -7,22 +7,26 @@ const passport = require('passport');
 const passportConfig = require('./services/auth');
 const MongoStore = require('connect-mongo')(session);
 const schema = require('./schema/schema');
+const MONGO_CREDENTIALS = require('./config');
 
 // Create a new Express application
 const app = express();
 
-// Replace with your mongoLab URI
-const MONGO_URI = '';
+// Replace with your mongoAtlas URI
+const MONGO_URI = MONGO_CREDENTIALS;
 
 // Mongoose's built in promise library is deprecated, replace it with ES2015 Promise
 mongoose.Promise = global.Promise;
 
 // Connect to the mongoDB instance and log a message
 // on success or failure
-mongoose.connect(MONGO_URI);
-mongoose.connection
-    .once('open', () => console.log('Connected to MongoLab instance.'))
-    .on('error', error => console.log('Error connecting to MongoLab:', error));
+mongoose
+  .connect(MONGO_URI, {useNewUrlParser: true,dbName:"test", useMongoClient:true,useCreateIndex:true}
+  )
+  .then(() => console.log('Connected to MongoLab instance.'))
+  .catch(error =>
+    console.log('Error connecting to MongoLab:', `${error.message}`)
+  );
 
 // Configures express to use sessions.  This places an encrypted identifier
 // on the users cookie.  When a user makes a request, this middleware examines
@@ -34,8 +38,8 @@ app.use(session({
   saveUninitialized: true,
   secret: 'aaabbbccc',
   store: new MongoStore({
-    url: MONGO_URI,
-    autoReconnect: true
+    mongooseConnection: mongoose.connection,
+    autoReconnect: true 
   })
 }));
 
